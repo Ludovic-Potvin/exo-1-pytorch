@@ -44,7 +44,6 @@ class MLPClassier(nn.Module):
         self.hidden2 = nn.Linear(12, 8)
         self.act2 = nn.Sigmoid()
 
-        # end def
         self.output = nn.Linear(8, 1)
         self.act_output = nn.Sigmoid()
 
