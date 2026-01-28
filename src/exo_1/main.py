@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -5,6 +6,7 @@ from torch.utils.data import random_split
 
 import torchvision
 import torchvision.transforms as transforms
+from torchvision import models
 
 from .CNN_Architecture import CNNClassifier
 from .other_tools import get_model_information
@@ -21,9 +23,13 @@ SEED = 42
 
 def main():
     # Transformer
-    transform = transforms.Compose(
-        [transforms.Resize((240, 240)), transforms.ToTensor()]
-    )
+    transform = transforms.Compose([
+        transforms.Resize((232, 232)),
+        transforms.RandomResizedCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+
     target_transform = transforms.Compose(
         [
             transforms.Lambda(
@@ -67,7 +73,9 @@ def main():
     image_shape = list(images.data.shape)
     image_channel = image_shape[1]
 
-    model = CNNClassifier(image_channel, class_number).to(device)
+    model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
+    model.fc = nn.Linear(model.fc.in_features, class_number)
+    model = model.to(device)
 
     get_model_information(model)
 
@@ -86,3 +94,8 @@ def main():
         device,
     )
     test_model(test_loader, model, loss_function, device, classes)
+
+    # Save
+    model_dir = "models"
+    os.makedirs(model_dir, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(model_dir, "my_model.pth"))
