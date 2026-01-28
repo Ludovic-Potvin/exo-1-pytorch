@@ -70,7 +70,12 @@ def get_model_information(model):
 
 def compute_accuracy(outputs, labels):
     accuracy = 0
+
+    labels = labels.argmax(dim=1)
+    outputs = outputs.argmax(dim=1)
+
     corrects = outputs == labels
     accuracy += corrects.sum().float() / float(labels.size(0))
 
-    return accuracy
+    return accuracy.item()
+

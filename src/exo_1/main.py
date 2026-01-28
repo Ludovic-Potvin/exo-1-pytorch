@@ -77,16 +77,6 @@ def main():
         test_set, batch_size=BATCH_SIZE, shuffle=True
     )
 
-    # Not sure what this is
-    model = train_model(
-        EPOCH_NUMBER,
-        train_loader,
-        validation_loader,
-        model,
-        optimizer,
-        loss_function,
-        device,
-    )
-
+    # Training
     model = train_model(EPOCH_NUMBER,train_loader,validation_loader,model,optimizer,loss_function, device)
     test_model(test_loader, model, loss_function, device)

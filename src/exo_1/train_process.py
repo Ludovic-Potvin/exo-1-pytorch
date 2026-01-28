@@ -34,9 +34,9 @@ def train_model(
                     * (running_accuracy / (mini_batch_counter + 1)),
                 )
                 mini_batch_counter += 1
-                validation_loss, validation_accuracy = validate_model(
-                    validation_loader, model, loss_function, device
-                )
+    validation_loss, validation_accuracy = validate_model(
+        validation_loader, model, loss_function, device
+    )
     return model
 
 
