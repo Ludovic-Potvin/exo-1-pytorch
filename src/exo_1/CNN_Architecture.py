@@ -26,7 +26,7 @@ class CNNClassifier(nn.Module):
         self.relu5 = nn.ReLU()
         self.BN5 = nn.BatchNorm2d(256)
 
-        self.fc1 = nn.Linear(1024, 120)
+        self.fc1 = nn.Linear(774400, 120)
         self.relufc1 = nn.ReLU()
 
         self.fc2 = nn.Linear(120, 84)

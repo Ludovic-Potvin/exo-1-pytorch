@@ -11,81 +11,78 @@ from .other_tools import get_model_information
 from .train_process import train_model
 from .test_process import test_model
 
-LEARNING_RATE = 0.01
-BATCH_SIZE = 128
+LEARNING_RATE = 0.005
+BATCH_SIZE = 16
 EPOCH_NUMBER = 20
 INPUT_SHAPE = 784
+DATASET_PATH = "./data/Images"
+SEED = 42
 
 
 def main():
-    # Data Transformation
-    transform = transforms.Compose([transforms.ToTensor()])
+    # Transformer
+    transform = transforms.Compose(
+        [transforms.Resize((240, 240)), transforms.ToTensor()]
+    )
     target_transform = transforms.Compose(
         [
             transforms.Lambda(
-                lambda y: torch.zeros(10, dtype=torch.float).scatter_(
+                lambda y: torch.zeros(7, dtype=torch.float).scatter_(
                     0, torch.tensor(y), value=1
                 )
             )
         ]
     )
 
-    # Train and validation set
-    train_set = torchvision.datasets.MNIST(
-        root="./data",
-        train=True,
-        download=True,
+    # Dataset
+    dataset = torchvision.datasets.ImageFolder(
+        root=DATASET_PATH,
         transform=transform,
         target_transform=target_transform,
     )
 
-    classes = train_set.classes
-    class_number = len(list(train_set.classes))
+    classes = dataset.classes
+    class_number = len(list(dataset.classes))
 
-    train_set_shape = list(train_set.data.shape)
-    train_set, validation_set = random_split(
-        train_set,
-        (
-            int(train_set_shape[0] * 0.9),
-            train_set_shape[0] - int(train_set_shape[0] * 0.9),
-        ),
+    generator1 = torch.Generator().manual_seed(SEED)
+    train_set, validation_set, test_set = random_split(
+        dataset, [0.7, 0.15, 0.15], generator=generator1
     )
+
+    # Loaders
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=BATCH_SIZE, shuffle=True
     )
     validation_loader = torch.utils.data.DataLoader(
         validation_set, batch_size=BATCH_SIZE, shuffle=False
     )
-
-    # Test set
-    test_set = torchvision.datasets.MNIST(
-        root="./data",
-        train=False,
-        download=True,
-        transform=transform,
-        target_transform=target_transform,
-    )
     test_loader = torch.utils.data.DataLoader(
         test_set, batch_size=BATCH_SIZE, shuffle=True
     )
 
-    # Display model
+    # Model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    if len(train_set_shape) == 3:
-        image_channel = 1
-    else:
-        image_channel = train_set_shape[3]
+    images, labels = next(iter(train_loader))
+    image_shape = list(images.data.shape)
+    image_channel = image_shape[1]
 
-
-    model = CNNClassifier(image_channel,class_number).to(device)
+    model = CNNClassifier(image_channel, class_number).to(device)
 
     get_model_information(model)
 
     # Loss function
-    loss_function = nn.CrossEntropyLoss()
+    loss_function = nn.BCEWithLogitsLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # Training
-    model = train_model(EPOCH_NUMBER,train_loader,validation_loader,model,optimizer,loss_function, device)
+    model = train_model(
+        EPOCH_NUMBER,
+        train_loader,
+        validation_loader,
+        model,
+        optimizer,
+        loss_function,
+        device,
+    )
     test_model(test_loader, model, loss_function, device, classes)
