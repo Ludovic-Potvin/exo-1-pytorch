@@ -5,6 +5,8 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 
+from MLP_Architecture import MLPClassier
+
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
 EPOCH_NUMBER = 20
@@ -30,12 +32,9 @@ def main():
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
-    # Transformation
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Lambda(lambda x: torch.flatten(x))]
     )
-
-    # Target
     target_transform = transforms.Compose(
         [
             transforms.Lambda(
@@ -45,9 +44,6 @@ def main():
             )
         ]
     )
-
-    # Training dataset
-    print("before dataset...")
     trainset = torchvision.datasets.MNIST(
         root="./data",
         train=True,
@@ -55,8 +51,6 @@ def main():
         transform=transform,
         target_transform=target_transform,
     )
-
-    # Train loader
     trainloader = torch.utils.data.DataLoader(
         trainset, batch_size=BATCH_SIZE, shuffle=True
     )
@@ -88,22 +82,3 @@ def main():
 
         print("[%d, %5d] accuracy: %.3f" % (epoch + 1, i + 1, accuracy / i))
         print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / i))
-
-
-class MLPClassier(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.hidden1 = nn.Linear(784, 784)
-        self.act1 = nn.Tanh()
-
-        self.hidden2 = nn.Linear(784, 500)
-        self.act2 = nn.Tanh()
-
-        self.output = nn.Linear(500, 10)
-        self.act_output = nn.Softmax(dim=1)
-
-    def forward(self, x):
-        x = self.act1(self.hidden1(x))
-        x = self.act2(self.hidden2(x))
-        x = self.act_output(self.output(x))
-        return x
