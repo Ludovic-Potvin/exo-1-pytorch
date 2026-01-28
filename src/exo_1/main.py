@@ -6,28 +6,18 @@ from torch.utils.data import random_split
 import torchvision
 import torchvision.transforms as transforms
 
-from .MLP_Architecture import MLPClassier
+from .CNN_Architecture import CNNClassifier
 from .other_tools import get_model_information
 from .train_process import train_model
 from .test_process import test_model
 
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
-EPOCH_NUMBER = 20
+EPOCH_NUMBER = 5
 INPUT_SHAPE = 784
 
 
 def main():
-    # Display model
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = MLPClassier(INPUT_SHAPE).to(device)
-
-    get_model_information(model)
-
-    # Loss function
-    loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
-
     # Data Transformation
     transform = transforms.Compose([transforms.ToTensor()])
     target_transform = transforms.Compose(
@@ -48,6 +38,10 @@ def main():
         transform=transform,
         target_transform=target_transform,
     )
+
+    classes = train_set.classes
+    class_number = len(list(train_set.classes))
+
     train_set_shape = list(train_set.data.shape)
     train_set, validation_set = random_split(
         train_set,
@@ -75,6 +69,23 @@ def main():
         test_set, batch_size=BATCH_SIZE, shuffle=True
     )
 
+    # Display model
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    if len(train_set_shape) == 3:
+        image_channel = 1
+    else:
+        image_channel = train_set_shape[3]
+
+
+    model = CNNClassifier(image_channel,class_number).to(device)
+
+    get_model_information(model)
+
+    # Loss function
+    loss_function = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
+
     # Training
     model = train_model(EPOCH_NUMBER,train_loader,validation_loader,model,optimizer,loss_function, device)
-    test_model(test_loader, model, loss_function, device)
+    test_model(test_loader, model, loss_function, device, classes)
