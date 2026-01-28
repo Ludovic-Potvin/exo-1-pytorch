@@ -1,37 +1,34 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import random_split
 
 import torchvision
 import torchvision.transforms as transforms
 
-from MLP_Architecture import MLPClassier
+from .MLP_Architecture import MLPClassier
+from .other_tools import get_model_information
+from .train_process import train_model
+from .test_process import test_model
 
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
 EPOCH_NUMBER = 20
+INPUT_SHAPE = 784
 
 
 def main():
     # Display model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = MLPClassier().to(device)
-    print(f"model: {model}")
+    model = MLPClassier(INPUT_SHAPE).to(device)
 
-    # Display total parameters
-    model_total_params = sum(p.numel() for p in model.parameters())
-    print(f"total parameters: {model_total_params}")
-
-    # Display total trainable parameters
-    model_total_trainable_params = sum(
-        p.numel() for p in model.parameters() if p.requires_grad
-    )
-    print(f"trainable: {model_total_trainable_params}")
+    get_model_information(model)
 
     # Loss function
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
+    # Data Transformation
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Lambda(lambda x: torch.flatten(x))]
     )
@@ -44,41 +41,52 @@ def main():
             )
         ]
     )
-    trainset = torchvision.datasets.MNIST(
+
+    # Train and validation set
+    train_set = torchvision.datasets.MNIST(
         root="./data",
         train=True,
         download=True,
         transform=transform,
         target_transform=target_transform,
     )
-    trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=BATCH_SIZE, shuffle=True
+    train_set_shape = list(train_set.data.shape)
+    train_set, validation_set = random_split(
+        train_set,
+        (
+            int(train_set_shape[0] * 0.9),
+            train_set_shape[0] - int(train_set_shape[0] * 0.9),
+        ),
+    )
+    train_loader = torch.utils.data.DataLoader(
+        train_set, batch_size=BATCH_SIZE, shuffle=True
+    )
+    validation_loader = torch.utils.data.DataLoader(
+        validation_set, batch_size=BATCH_SIZE, shuffle=False
     )
 
-    # Training loop
-    for epoch in range(EPOCH_NUMBER):
-        running_loss = 0.0
-        accuracy = 0.0
-        print("started epoch")
-        for i, data in enumerate(trainloader, 0):
-            print("looping")
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
+    # Test set
+    test_set = torchvision.datasets.MNIST(
+        root="./data",
+        train=False,
+        download=True,
+        transform=transform,
+        target_transform=target_transform,
+    )
+    test_loader = torch.utils.data.DataLoader(
+        test_set, batch_size=BATCH_SIZE, shuffle=True
+    )
 
-            outputs = model(inputs)
-            loss = loss_function(outputs, labels)
+    # Not sure what this is
+    model = train_model(
+        EPOCH_NUMBER,
+        train_loader,
+        validation_loader,
+        model,
+        optimizer,
+        loss_function,
+        device,
+    )
 
-            labels = labels.argmax(dim=1)
-            outputs = outputs.argmax(dim=1)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            corrects = outputs == labels
-            accuracy += corrects.sum().float() / float(labels.size(0))
-
-            running_loss += loss.item()
-
-        print("[%d, %5d] accuracy: %.3f" % (epoch + 1, i + 1, accuracy / i))
-        print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / i))
+    model = train_model(EPOCH_NUMBER,train_loader,validation_loader,model,optimizer,loss_function, device)
+    test_model(test_loader, model, loss_function, device)

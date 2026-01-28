@@ -1,3 +1,6 @@
+import torch.nn as nn
+
+
 class MLPClassier(nn.Module):
     def __init__(self, input_shape):
         super().__init__()
