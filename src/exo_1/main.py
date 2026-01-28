@@ -29,9 +29,7 @@ def main():
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # Data Transformation
-    transform = transforms.Compose(
-        [transforms.ToTensor(), transforms.Lambda(lambda x: torch.flatten(x))]
-    )
+    transform = transforms.Compose([transforms.ToTensor()])
     target_transform = transforms.Compose(
         [
             transforms.Lambda(
