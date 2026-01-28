@@ -13,7 +13,7 @@ from .test_process import test_model
 
 LEARNING_RATE = 0.01
 BATCH_SIZE = 128
-EPOCH_NUMBER = 5
+EPOCH_NUMBER = 20
 INPUT_SHAPE = 784
 
 
