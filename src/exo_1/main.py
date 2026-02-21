@@ -1,4 +1,6 @@
 import torch
+import os
+from datetime import datetime
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import random_split
@@ -11,19 +13,24 @@ from .other_tools import get_model_information
 from .train_process import train_model
 from .test_process import test_model
 
+from .patch_embeding.vit import ViT
+
 LEARNING_RATE = 0.005
-BATCH_SIZE = 16
-EPOCH_NUMBER = 20
+BATCH_SIZE = 8
+EPOCH_NUMBER = 3
 INPUT_SHAPE = 784
 DATASET_PATH = "./data/Images"
+RESULT_PATH = "./results"
 SEED = 42
 
 
 def main():
     # Transformer
-    transform = transforms.Compose(
-        [transforms.Resize((240, 240)), transforms.ToTensor()]
-    )
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+    ])
     target_transform = transforms.Compose(
         [
             transforms.Lambda(
@@ -67,7 +74,8 @@ def main():
     image_shape = list(images.data.shape)
     image_channel = image_shape[1]
 
-    model = CNNClassifier(image_channel, class_number).to(device)
+    #model = CNNClassifier(image_channel, class_number).to(device)
+    model = ViT(num_classes=7).to(device)
 
     get_model_information(model)
 
@@ -86,3 +94,16 @@ def main():
         device,
     )
     test_model(test_loader, model, loss_function, device, classes)
+    
+    # Write to file
+    now = datetime.now()
+    my_folder_name = now.strftime("%Y-%m-%d_%H" + "h" + "%M" + "min" + "%S" +
+    "sec")
+    os.makedirs(os.path.join(RESULT_PATH, my_folder_name))
+    print("\nResult folder created")
+    txt_file = open(os.path.join(os.path.join(RESULT_PATH, my_folder_name),
+    "Results.txt"), "a")
+    txt_file.write("Hyperparameters\n")
+    txt_file.write(f"Epoch number: {EPOCH_NUMBER}\n")
+    txt_file.write(f"Batch size: {BATCH_SIZE}\n")
+    txt_file.write(f"Learning rate: {LEARNING_RATE}\n")

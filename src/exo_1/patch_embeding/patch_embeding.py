@@ -5,7 +5,7 @@ from torch import nn
 class PatchEmbedding(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_channels=3, emb_size=768):
         self.img_size = img_size
-        self.patch_size
+        self.patch_size = patch_size
         self.num_patches = (img_size // patch_size) ** 2
         self.patch_dim = in_channels * patch_size * patch_size
 
@@ -22,7 +22,7 @@ class PatchEmbedding(nn.Module):
 
         patches = x.unfold(2, self.patch_size, self.patch_size).unfold(3, self.patch_size, self.patch_size)
 
-        patches = patches.contiuous().view(B, C, -1, self.patch_size, self.patch_size)
+        patches = patches.contiguous().view(B, C, -1, self.patch_size, self.patch_size)
 
         patches = patches.permute(0, 2, 1, 3, 4)
         patches = patches.flatten(2)

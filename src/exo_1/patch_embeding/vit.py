@@ -1,7 +1,7 @@
 from torch import nn
 
-from patch_embeding.patch_embeding import PatchEmbedding
-from patch_embeding.transformer_encoder import TransformerEncoderBlock
+from .patch_embeding import PatchEmbedding
+from .transformer_encoder import TransformerEncoderBlock
 
 
 class ViT(nn.Module):
@@ -16,7 +16,8 @@ class ViT(nn.Module):
         mlp_ratio=4,
         num_classes=1000,
     ):
-        self.patch_embed = PatchEmbedding(in_channels, patch_size, emb_size, img_size)
+        super().__init__()
+        self.patch_embed = PatchEmbedding(img_size, patch_size, in_channels, emb_size)
 
         self.encoder = nn.Sequential(
             *[
